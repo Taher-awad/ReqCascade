@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Requirement Waterfall Pipeline</title>
+    <meta name="description" content="Cascading requirement generation pipeline with dual-gate semantic and AI validation">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="header glass panel">
+            <div class="title-area">
+                <h1>Requirement Waterfall Pipeline</h1>
+                <p>Cascading generation powered by <span class="badge">gemini-2.5-flash</span></p>
+                <div id="health-status" class="status-indicator warning">Checking connection...</div>
+            </div>
+            <div class="pipeline-legend">
+                <span class="legend-item" data-stage="br"><span class="legend-dot" style="background:#f59e0b"></span>Business Req</span>
+                <span class="legend-item" data-stage="hlfr"><span class="legend-dot" style="background:#3b82f6"></span>High-Level FR</span>
+                <span class="legend-item" data-stage="llfr"><span class="legend-dot" style="background:#8b5cf6"></span>Low-Level FR</span>
+                <span class="legend-item" data-stage="tr"><span class="legend-dot" style="background:#06d6a0"></span>Test Req</span>
+                <span class="legend-item" data-stage="tc"><span class="legend-dot" style="background:#ec4899"></span>Test Case</span>
+            </div>
+        </header>
+
+        <main class="main-grid">
+            <!-- Left Column: Input -->
+            <section class="input-section glass panel">
+                <h2>📝 Raw Input</h2>
+                <div class="input-controls">
+                    <textarea id="prompt-input" placeholder="Type a software requirement or PRD segment here..."></textarea>
+                    
+                    <div class="file-upload-wrapper">
+                        <label for="file-upload" class="file-btn">
+                            📁 Upload .md/.txt
+                        </label>
+                        <input type="file" id="file-upload" accept=".txt,.md">
+                        <span id="file-name"></span>
+                    </div>
+                </div>
+                <button id="run-btn" class="primary-btn">
+                    <span class="btn-text">Run Pipeline</span>
+                    <span class="loader hidden"></span>
+                </button>
+                <button id="export-btn" class="secondary-btn hidden" style="margin-top: 0.8rem; width: 100%; border: 1px solid var(--border-color); padding: 0.8rem; border-radius: 8px; background: rgba(255,255,255,0.05); cursor: pointer; color: var(--text-primary); transition: all 0.2s;">
+                    📄 Export PDF Result
+                </button>
+                <button id="export-json-btn" class="secondary-btn hidden" style="margin-top: 0.5rem; width: 100%; border: 1px solid rgba(0,212,255,0.4); padding: 0.8rem; border-radius: 8px; background: rgba(0,212,255,0.07); cursor: pointer; color: #00d4ff; font-weight: 600; transition: all 0.2s;">
+                    ⬇️ Export JSON (with Prompts)
+                </button>
+                <button id="continue-btn" class="secondary-btn hidden" style="margin-top: 0.5rem; width: 100%; border: 1px solid rgba(245,158,11,0.4); padding: 0.8rem; border-radius: 8px; background: rgba(245,158,11,0.1); cursor: pointer; color: #f59e0b; font-weight: 600; transition: all 0.2s;">
+                    🔄 Continue Generating
+                </button>
+                <button id="history-btn" style="margin-top: 0.5rem; width: 100%; border: 1px solid var(--border-color); padding: 0.7rem; border-radius: 8px; background: rgba(255,255,255,0.03); cursor: pointer; color: var(--text-secondary); font-size: 0.85rem; transition: all 0.2s;">
+                    📜 History
+                </button>
+            </section>
+
+            <!-- Right Column: Pipeline Output -->
+            <section class="output-section glass panel">
+                <!-- Progress Bar -->
+                <div class="pipeline-progress" id="pipeline-progress">
+                    <div class="progress-stage" data-stage="atomics">
+                        <span class="progress-label">🔬 Atomics</span>
+                    </div>
+                    <div class="progress-stage" data-stage="br">
+                        <span class="progress-label">💼 Business</span>
+                    </div>
+                    <div class="progress-stage" data-stage="hlfr">
+                        <span class="progress-label">📋 HLFR</span>
+                    </div>
+                    <div class="progress-stage" data-stage="llfr">
+                        <span class="progress-label">⚙️ LLFR</span>
+                    </div>
+                    <div class="progress-stage" data-stage="tr">
+                        <span class="progress-label">🧪 Tests</span>
+                    </div>
+                    <div class="progress-stage" data-stage="tc">
+                        <span class="progress-label">📄 Cases</span>
+                    </div>
+                </div>
+
+                <!-- Tree Output -->
+                <div class="tree-container" id="tree-container">
+                    <div class="empty-state" id="empty-state">
+                        <div class="empty-icon">🌲</div>
+                        <p>Requirement tree will appear here</p>
+                        <p class="empty-sub">Enter a requirement and run the pipeline</p>
+                    </div>
+                    <div id="tree-root" class="tree-root hidden"></div>
+                </div>
+
+                <!-- Validation Summary -->
+                <div class="validation-summary hidden" id="validation-summary">
+                    <div class="summary-row">
+                        <span class="summary-label">⏱️ Duration</span>
+                        <span class="summary-value" id="summary-duration">—</span>
+                    </div>
+                    <div class="summary-row">
+                        <span class="summary-label">🔗 Semantic Avg</span>
+                        <span class="summary-value" id="summary-gate-a">—</span>
+                    </div>
+                    <div class="summary-row">
+                        <span class="summary-label">🧠 Critic Avg</span>
+                        <span class="summary-value" id="summary-gate-b">—</span>
+                    </div>
+                    <div class="summary-row">
+                        <span class="summary-label">✅ Gates Passed</span>
+                        <span class="summary-value" id="summary-gates">—</span>
+                    </div>
+                    <div class="summary-row stats-row">
+                        <span id="stat-atomics">0</span> Atomics →
+                        <span id="stat-brs">0</span> BRs →
+                        <span id="stat-hlfrs">0</span> HLFRs →
+                        <span id="stat-llfrs">0</span> LLFRs →
+                        <span id="stat-trs">0</span> TRs →
+                        <span id="stat-tcs">0</span> TCs
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- History Sidebar -->
+    <div id="history-sidebar" class="history-sidebar hidden">
+        <div class="history-sidebar-header">
+            <h3>📜 Past Generations</h3>
+            <button id="history-close-btn" class="history-close">✕</button>
+        </div>
+        <div id="history-list" class="history-list">
+            <p class="empty-sub">Loading...</p>
+        </div>
+    </div>
+    <div id="history-overlay" class="history-overlay hidden"></div>
+
+    <div id="print-container"></div>
+    <script src="/static/app.js"></script>
+</body>
+</html>

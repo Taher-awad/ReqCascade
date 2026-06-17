@@ -1,0 +1,45 @@
+# ── Python ──
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+*.egg-info/
+
+# ── Environment (contains API keys!) ──
+.env
+
+# ── IDE / Editor ──
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# ── Debug & Output Files ──
+*.log
+stream_out*.txt
+test_out*.txt
+output*.txt
+raw_output*.txt
+debug_raw.txt
+batch_results.json
+pipeline_run_*.json
+
+# ── Data (runtime generated) ──
+data/history/*.json
+backend/data/history/*.json
+
+# ── Presentations & Documents ──
+*.pptx
+*.pdf
+!docs/paper/*.pdf
+*.png
+!docs/*.png
+*.jpg
+*.jpeg
+.~lock.*
+
+# ── OS ──
+.DS_Store
+Thumbs.db

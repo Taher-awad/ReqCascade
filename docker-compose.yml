@@ -1,0 +1,15 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    network_mode: "host"
+    env_file:
+      - .env
+    volumes:
+      - ./backend:/app
+      - ./frontend:/frontend
+      - ./data:/data
+    environment:
+      - PYTHONUNBUFFERED=1
+    restart: unless-stopped
